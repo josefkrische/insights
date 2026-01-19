@@ -441,6 +441,18 @@
             }
 
             const now = new Date();
+            
+            // Prüfe ob bereits ein gültiger zukünftiger Timer existiert
+            if (settings.nextReminderDate) {
+                const existingTimer = new Date(settings.nextReminderDate);
+                if (existingTimer > now) {
+                    // Timer ist noch gültig, nichts tun
+                    updateStats();
+                    checkForReminder();
+                    return;
+                }
+            }
+
             const lastReminder = settings.lastReminderDate ? new Date(settings.lastReminderDate) : null;
 
             // Berechne wann die nächste Erinnerung sein soll
