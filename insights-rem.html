@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4F46E5">
+    <title>Erkenntnisse Reminder</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #4F46E5;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .notification-status {
+            background: #FEF3C7;
+            border: 2px solid #F59E0B;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .notification-status.show {
+            display: block;
+        }
+
+        .notification-status.enabled {
+            background: #D1FAE5;
+            border-color: #10B981;
+        }
+
+        .notification-status button {
+            background: #4F46E5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .notification-status button:hover {
+            background: #4338CA;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
+            border: 2px solid #E5E7EB;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            margin-bottom: 15px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #4F46E5;
+        }
+
+        .settings {
+            background: #F3F4F6;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .settings label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .settings select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        button.primary {
+            background: #4F46E5;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        button.primary:hover {
+            background: #4338CA;
+        }
+
+        .insights-list {
+            margin-top: 30px;
+        }
+
+        .insights-list h2 {
+            color: #4F46E5;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .insight-item {
+            background: #F9FAFB;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            position: relative;
+            border-left: 4px solid #4F46E5;
+        }
+
+        .insight-item p {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .insight-item .meta {
+            font-size: 12px;
+            color: #6B7280;
+        }
+
+        .insight-item button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #EF4444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .insight-item button:hover {
+            background: #DC2626;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #9CA3AF;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #EEF2FF;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4F46E5;
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            color: #6B7280;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💡 Erkenntnisse Reminder</h1>
+        <p class="subtitle">Speichere deine Erkenntnisse und erhalte regelmäßige Erinnerungen</p>
+
+        <div id="notificationStatus" class="notification-status">
+            <p><strong>⚠️ Benachrichtigungen sind deaktiviert</strong></p>
+            <p style="font-size: 14px; margin-top: 5px;">Erlaube Benachrichtigungen, um Erinnerungen zu erhalten.</p>
+            <button onclick="requestNotificationPermission()">Benachrichtigungen aktivieren</button>
+        </div>
+
+        <div class="input-section">
+            <textarea id="insightInput" placeholder="Schreibe hier deine Erkenntnis..."></textarea>
+            
+            <div class="settings">
+                <label for="frequency">Erinnerungshäufigkeit pro Woche:</label>
+                <select id="frequency">
+                    <option value="1">1x pro Woche</option>
+                    <option value="2" selected>2x pro Woche</option>
+                </select>
+            </div>
+
+            <button class="primary" onclick="addInsight()">Erkenntnis speichern</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="number" id="totalInsights">0</div>
+                <div class="label">Erkenntnisse</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="nextReminder">-</div>
+                <div class="label">Nächste Erinnerung</div>
+            </div>
+        </div>
+
+        <div class="insights-list">
+            <h2>Deine Erkenntnisse</h2>
+            <div id="insightsList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Datenstruktur
+        let insights = [];
+        let settings = {
+            frequency: 2,
+            lastReminderDate: null,
+            nextReminderDate: null
+        };
+
+        // Initialisierung
+        window.addEventListener('load', () => {
+            loadData();
+            checkNotificationPermission();
+            renderInsights();
+            updateStats();
+            // Nur prüfen, nicht neu planen
+            checkForReminder();
+        });
+
+        // Daten laden
+        function loadData() {
+            const savedInsights = localStorage.getItem('insights');
+            const savedSettings = localStorage.getItem('settings');
+            
+            if (savedInsights) {
+                insights = JSON.parse(savedInsights);
+            }
+            
+            if (savedSettings) {
+                settings = JSON.parse(savedSettings);
+                document.getElementById('frequency').value = settings.frequency;
+            }
+        }
+
+        // Daten speichern
+        function saveData() {
+            localStorage.setItem('insights', JSON.stringify(insights));
+            localStorage.setItem('settings', JSON.stringify(settings));
+        }
+
+        // Erkenntnis hinzufügen
+        function addInsight() {
+            const input = document.getElementById('insightInput');
+            const text = input.value.trim();
+            
+            if (!text) {
+                alert('Bitte gib eine Erkenntnis ein!');
+                return;
+            }
+
+            const insight = {
+                id: Date.now(),
+                text: text,
+                createdAt: new Date().toISOString(),
+                viewCount: 0
+            };
+
+            insights.push(insight);
+            input.value = '';
+            
+            saveData();
+            renderInsights();
+            updateStats();
+            
+            // Nur Timer setzen, wenn noch keiner existiert
+            if (!settings.nextReminderDate) {
+                scheduleNextReminder();
+            }
+        }
+
+        // Erkenntnis löschen
+        function deleteInsight(id) {
+            if (confirm('Möchtest du diese Erkenntnis wirklich löschen?')) {
+                insights = insights.filter(i => i.id !== id);
+                saveData();
+                renderInsights();
+                updateStats();
+            }
+        }
+
+        // Erkenntnisse anzeigen
+        function renderInsights() {
+            const list = document.getElementById('insightsList');
+            
+            if (insights.length === 0) {
+                list.innerHTML = '<div class="empty-state">Noch keine Erkenntnisse gespeichert.<br>Füge deine erste Erkenntnis hinzu!</div>';
+                return;
+            }
+
+            list.innerHTML = insights.map(insight => `
+                <div class="insight-item">
+                    <button onclick="deleteInsight(${insight.id})">Löschen</button>
+                    <p>${insight.text}</p>
+                    <div class="meta">
+                        Erstellt: ${new Date(insight.createdAt).toLocaleDateString('de-DE')} | 
+                        ${insight.viewCount}x angezeigt
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Statistiken aktualisieren
+        function updateStats() {
+            document.getElementById('totalInsights').textContent = insights.length;
+            
+            if (settings.nextReminderDate) {
+                const next = new Date(settings.nextReminderDate);
+                const now = new Date();
+                const diff = next - now;
+                
+                if (diff > 0) {
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    
+                    if (days > 0) {
+                        document.getElementById('nextReminder').textContent = `${days}d ${hours}h`;
+                    } else {
+                        document.getElementById('nextReminder').textContent = `${hours}h`;
+                    }
+                } else {
+                    document.getElementById('nextReminder').textContent = 'Bald';
+                }
+            }
+        }
+
+        // Häufigkeit ändern
+        document.getElementById('frequency').addEventListener('change', (e) => {
+            settings.frequency = parseInt(e.target.value);
+            saveData();
+            // Timer wird beim nächsten natürlichen Ablauf mit neuer Frequenz berechnet
+        });
+
+        // Benachrichtigungen prüfen
+        function checkNotificationPermission() {
+            const status = document.getElementById('notificationStatus');
+            
+            if (!('Notification' in window)) {
+                status.innerHTML = '<p><strong>⚠️ Benachrichtigungen werden nicht unterstützt</strong></p><p style="font-size: 14px; margin-top: 5px;">Dein Browser unterstützt keine Benachrichtigungen.</p>';
+                status.classList.add('show');
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                status.innerHTML = '<p><strong>✅ Benachrichtigungen aktiviert</strong></p><p style="font-size: 14px; margin-top: 5px;">Du erhältst Erinnerungen zu deinen Erkenntnissen.</p>';
+                status.classList.add('show', 'enabled');
+            } else if (Notification.permission === 'denied') {
+                status.innerHTML = '<p><strong>❌ Benachrichtigungen blockiert</strong></p><p style="font-size: 14px; margin-top: 5px;">Bitte erlaube Benachrichtigungen in deinen Browser-Einstellungen.</p>';
+                status.classList.add('show');
+            } else {
+                status.classList.add('show');
+            }
+        }
+
+        // Benachrichtigungsberechtigung anfragen
+        function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                alert('Dein Browser unterstützt keine Benachrichtigungen.');
+                return;
+            }
+
+            Notification.requestPermission().then(permission => {
+                checkNotificationPermission();
+                if (permission === 'granted') {
+                    showNotification('Erkenntnisse Reminder', 'Benachrichtigungen wurden erfolgreich aktiviert! 🎉');
+                }
+            });
+        }
+
+        // Benachrichtigung anzeigen
+        function showNotification(title, body) {
+            if (Notification.permission === 'granted') {
+                new Notification(title, {
+                    body: body,
+                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" font-size="75">💡</text></svg>',
+                    badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="75" font-size="75">💡</text></svg>'
+                });
+            }
+        }
+
+        // Nächste Erinnerung planen
+        function scheduleNextReminder() {
+            if (insights.length === 0) {
+                settings.nextReminderDate = null;
+                saveData();
+                updateStats();
+                return;
+            }
+
+            const now = new Date();
+            
+            // Prüfe ob bereits ein gültiger zukünftiger Timer existiert
+            if (settings.nextReminderDate) {
+                const existingTimer = new Date(settings.nextReminderDate);
+                if (existingTimer > now) {
+                    // Timer ist noch gültig, nichts tun
+                    updateStats();
+                    checkForReminder();
+                    return;
+                }
+            }
+
+            const lastReminder = settings.lastReminderDate ? new Date(settings.lastReminderDate) : null;
+
+            // Berechne wann die nächste Erinnerung sein soll
+            let nextDate;
+            if (!lastReminder) {
+                // Erste Erinnerung: morgen zu zufälliger Zeit
+                nextDate = new Date(now);
+                nextDate.setDate(nextDate.getDate() + 1);
+                nextDate.setHours(Math.floor(Math.random() * 12) + 9, Math.floor(Math.random() * 60), 0, 0);
+            } else {
+                // Berechne Tage zwischen Erinnerungen basierend auf Häufigkeit
+                const daysBetween = Math.floor(7 / settings.frequency);
+                nextDate = new Date(lastReminder);
+                nextDate.setDate(nextDate.getDate() + daysBetween);
+                nextDate.setHours(Math.floor(Math.random() * 12) + 9, Math.floor(Math.random() * 60), 0, 0);
+            }
+
+            settings.nextReminderDate = nextDate.toISOString();
+            saveData();
+            updateStats();
+
+            // Timer für nächste Erinnerung setzen
+            checkForReminder();
+        }
+
+        // Auf Erinnerung prüfen
+        function checkForReminder() {
+            if (!settings.nextReminderDate || insights.length === 0) return;
+
+            const now = new Date();
+            const nextReminder = new Date(settings.nextReminderDate);
+
+            if (now >= nextReminder) {
+                sendReminder();
+            } else {
+                // Prüfe alle 5 Minuten
+                setTimeout(checkForReminder, 5 * 60 * 1000);
+            }
+        }
+
+        // Erinnerung senden
+        function sendReminder() {
+            if (insights.length === 0) return;
+
+            // Wähle zufällige Erkenntnis
+            const randomInsight = insights[Math.floor(Math.random() * insights.length)];
+            
+            // Erhöhe View Count
+            randomInsight.viewCount++;
+
+            // Zeige Benachrichtigung
+            showNotification('💡 Deine Erkenntnis', randomInsight.text);
+
+            // Aktualisiere letzte Erinnerung
+            settings.lastReminderDate = new Date().toISOString();
+            saveData();
+            renderInsights();
+
+            // Plane nächste Erinnerung
+            scheduleNextReminder();
+        }
+
+        // Prüfe regelmäßig auf Erinnerungen
+        setInterval(checkForReminder, 5 * 60 * 1000); // Alle 5 Minuten
+        
+        // Prüfe auch beim Öffnen der App
+        checkForReminder();
+
+        // Service Worker registrieren (für PWA)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {
+                console.log('Service Worker registration not available');
+            });
+        }
+    </script>
+</body>
+</html>
