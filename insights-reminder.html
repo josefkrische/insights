@@ -272,7 +272,8 @@
             checkNotificationPermission();
             renderInsights();
             updateStats();
-            scheduleNextReminder();
+            // Nur prüfen, nicht neu planen
+            checkForReminder();
         });
 
         // Daten laden
