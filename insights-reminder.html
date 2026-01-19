@@ -319,7 +319,11 @@
             saveData();
             renderInsights();
             updateStats();
-            scheduleNextReminder();
+            
+            // Nur Timer setzen, wenn noch keiner existiert
+            if (!settings.nextReminderDate) {
+                scheduleNextReminder();
+            }
         }
 
         // Erkenntnis löschen
@@ -381,7 +385,7 @@
         document.getElementById('frequency').addEventListener('change', (e) => {
             settings.frequency = parseInt(e.target.value);
             saveData();
-            scheduleNextReminder();
+            // Timer wird beim nächsten natürlichen Ablauf mit neuer Frequenz berechnet
         });
 
         // Benachrichtigungen prüfen
